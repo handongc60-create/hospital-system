@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hospital.mapper.ScheduleMapper">
+
+    <resultMap id="ScheduleMap" type="com.hospital.entity.Schedule">
+        <id column="schedule_id" property="scheduleId"/>
+        <result column="doctor_id" property="doctorId"/>
+        <result column="dept_id" property="deptId"/>
+        <result column="work_date" property="workDate"/>
+        <result column="time_slot" property="timeSlot"/>
+        <result column="start_time" property="startTime"/>
+        <result column="end_time" property="endTime"/>
+        <result column="max_count" property="maxCount"/>
+        <result column="remain_count" property="remainCount"/>
+        <result column="booked_count" property="bookedCount"/>
+        <result column="fee" property="fee"/>
+        <result column="schedule_type" property="scheduleType"/>
+        <result column="clinic_room" property="clinicRoom"/>
+        <result column="status" property="status"/>
+        <result column="cancel_reason" property="cancelReason"/>
+        <result column="version" property="version"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 根据条件查询排班列表 -->
+    <select id="selectByCondition" resultMap="ScheduleMap">
+        SELECT s.*, d.name as doctor_name, d.title as doctor_title, dept.dept_name
+        FROM schedule s
+        LEFT JOIN doctor d ON s.doctor_id = d.doctor_id
+        LEFT JOIN department dept ON s.dept_id = dept.dept_id
+        WHERE s.deleted = 0 AND s.status = 1
+        <if test="deptId != null and deptId != ''">
+            AND s.dept_id = #{deptId}
+        </if>
+        <if test="doctorId != null and doctorId != ''">
+            AND s.doctor_id = #{doctorId}
+        </if>
+        <if test="startDate != null">
+            AND s.work_date &gt;= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND s.work_date &lt;= #{endDate}
+        </if>
+        ORDER BY s.work_date,
+                 CASE s.time_slot WHEN '上午' THEN 1 WHEN '下午' THEN 2 ELSE 3 END
+    </select>
+
+</mapper>

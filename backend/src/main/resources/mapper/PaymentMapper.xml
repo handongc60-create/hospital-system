@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hospital.mapper.PaymentMapper">
+
+    <resultMap id="PaymentVOMap" type="com.hospital.vo.PaymentVO">
+        <id column="pay_id" property="payId"/>
+        <result column="pay_no" property="payNo"/>
+        <result column="appt_id" property="apptId"/>
+        <result column="appt_no" property="apptNo"/>
+        <result column="presc_id" property="prescId"/>
+        <result column="patient_id" property="patientId"/>
+        <result column="patient_name" property="patientName"/>
+        <result column="business_type" property="businessType"/>
+        <result column="amount" property="amount"/>
+        <result column="pay_method" property="payMethod"/>
+        <result column="status" property="status"/>
+        <result column="pay_time" property="payTime"/>
+        <result column="trade_no" property="tradeNo"/>
+        <result column="refund_time" property="refundTime"/>
+        <result column="refund_amount" property="refundAmount"/>
+        <result column="refund_reason" property="refundReason"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <!-- 收费员：分页查询所有支付记录（关联挂号编号、患者姓名） -->
+    <select id="selectCashierPayments" resultMap="PaymentVOMap">
+        SELECT p.*,
+               CONCAT('GH', DATE_FORMAT(a.visit_date, '%Y%m%d'), '-', LPAD(a.queue_no, 3, '0')) AS appt_no,
+               pat.name AS patient_name
+        FROM payment p
+        LEFT JOIN appointment a ON p.appt_id = a.appt_id
+        LEFT JOIN patient pat ON a.patient_id = pat.user_id
+        WHERE p.deleted = 0
+        <if test="apptNo != null and apptNo != ''">
+            AND a.appt_id = #{apptNo}
+        </if>
+        ORDER BY p.create_time DESC
+    </select>
+
+</mapper>

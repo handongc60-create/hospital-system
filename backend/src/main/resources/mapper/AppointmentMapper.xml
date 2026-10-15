@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.hospital.mapper.AppointmentMapper">
+
+    <resultMap id="AppointmentVOMap" type="com.hospital.vo.AppointmentVO">
+        <id column="appt_id" property="apptId"/>
+        <result column="appt_no" property="apptNo"/>
+        <result column="patient_id" property="patientId"/>
+        <result column="patient_name" property="patientName"/>
+        <result column="doctor_id" property="doctorId"/>
+        <result column="doctor_name" property="doctorName"/>
+        <result column="doctor_title" property="doctorTitle"/>
+        <result column="dept_id" property="deptId"/>
+        <result column="dept_name" property="deptName"/>
+        <result column="schedule_id" property="scheduleId"/>
+        <result column="appt_time" property="apptTime"/>
+        <result column="visit_date" property="visitDate"/>
+        <result column="time_slot" property="timeSlot"/>
+        <result column="visit_time" property="visitTime"/>
+        <result column="queue_no" property="queueNo"/>
+        <result column="fee" property="fee"/>
+        <result column="pay_status" property="payStatus"/>
+        <result column="visit_status" property="visitStatus"/>
+        <result column="source" property="source"/>
+        <result column="pay_method" property="payMethod"/>
+        <result column="pay_time" property="payTime"/>
+        <result column="clinic_room" property="clinicRoom"/>
+    </resultMap>
+
+    <!-- 友好编号表达式：GH + 就诊日期(yyyyMMdd) + '-' + 3位排队号 -->
+    <sql id="apptNoExpr">
+        CONCAT('GH', DATE_FORMAT(a.visit_date, '%Y%m%d'), '-', LPAD(a.queue_no, 3, '0')) AS appt_no
+    </sql>
+
+    <!-- 分页查询患者挂号记录 -->
+    <select id="selectPatientAppointments" resultMap="AppointmentVOMap">
+        SELECT a.*,
+               <include refid="apptNoExpr"/>,
+               p.name as patient_name, d.name as doctor_name, d.title as doctor_title,
+               dept.dept_name, s.clinic_room
+        FROM appointment a
+        LEFT JOIN patient p ON a.patient_id = p.user_id
+        LEFT JOIN doctor d ON a.doctor_id = d.doctor_id
+        LEFT JOIN department dept ON a.dept_id = dept.dept_id
+        LEFT JOIN schedule s ON a.schedule_id = s.schedule_id
+        WHERE a.deleted = 0 AND a.patient_id = #{patientId}
+        <if test="status != null and status != ''">
+            AND a.visit_status = #{status}
+        </if>
+        ORDER BY a.appt_time DESC
+    </select>
+
+    <!-- 分页查询医生当日挂号队列 -->
+    <select id="selectDoctorAppointments" resultMap="AppointmentVOMap">
+        SELECT a.*,
+               <include refid="apptNoExpr"/>,
+               p.name as patient_name, d.name as doctor_name, d.title as doctor_title,
+               dept.dept_name, s.clinic_room
+        FROM appointment a
+        LEFT JOIN patient p ON a.patient_id = p.user_id
+        LEFT JOIN doctor d ON a.doctor_id = d.doctor_id
+        LEFT JOIN department dept ON a.dept_id = dept.dept_id
+        LEFT JOIN schedule s ON a.schedule_id = s.schedule_id
+        WHERE a.deleted = 0 AND a.doctor_id = #{doctorId}
+        AND a.visit_date = #{visitDate}
+        <if test="visitStatus != null and visitStatus != ''">
+            AND a.visit_status = #{visitStatus}
+        </if>
+        ORDER BY a.queue_no ASC
+    </select>
+
+    <!-- 根据挂号ID查询详情 -->
+    <select id="selectDetailById" resultMap="AppointmentVOMap">
+        SELECT a.*,
+               <include refid="apptNoExpr"/>,
+               p.name as patient_name, d.name as doctor_name, d.title as doctor_title,
+               dept.dept_name, s.clinic_room
+        FROM appointment a
+        LEFT JOIN patient p ON a.patient_id = p.user_id
+        LEFT JOIN doctor d ON a.doctor_id = d.doctor_id
+        LEFT JOIN department dept ON a.dept_id = dept.dept_id
+        LEFT JOIN schedule s ON a.schedule_id = s.schedule_id
+        WHERE a.appt_id = #{apptId} AND a.deleted = 0
+    </select>
+
+</mapper>
